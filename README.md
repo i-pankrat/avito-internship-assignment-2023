@@ -88,5 +88,5 @@ curl -X GET http://localhost:8082/user/1
 ```
 Результат успешной работы команды: {"status":"OK","slugs":["AVITO_DISCOUNT_30"]}
 
-## Дополнитель
+## Дополнительно
 * Инициализация базы данных происходит в [файле](internal/storage/postgresql/postgresql.go) в методе New()
