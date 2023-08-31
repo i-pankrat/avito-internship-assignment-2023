@@ -45,27 +45,32 @@ docker compose up
 ```bash
 curl -X POST http://localhost:8082/segments -H "Content-Type: application/json" -d '{ "slug":"AVITO_DISCOUNT_30" }' 
 ```
+Результат успешной работы команды: {"status":"OK"}
 
 * Удаление сегмента AVITO_DISCOUNT_30.
 ```bash
 curl -X DELETE http://localhost:8082/segments/AVITO_DISCOUNT_30 
 ```
+Результат успешной работы команды: {"status":"OK"}
 
 * Добавление пользователя с id=1 в сегмент AVITO_DISCOUNT_30.
 ```bash
 curl -X POST http://localhost:8082/user -H "Content-Type: application/json" -d '{ "user_id":1, "segments_to_add":[ {"slug": "AVITO_DISCOUNT_30"}] }'
 ```
+Результат успешной работы команды: {"status":"OK"}
 
 * Удаление пользователя с id=1 из сегмента AVITO_DISCOUNT_30.
 ```bash
 curl -X POST http://localhost:8082/user -H "Content-Type: application/json" -d '{ "user_id":1, "segments_to_delete": ["AVITO_DISCOUNT_30"]}' 
 ```
+Результат успешной работы команды: {"status":"OK"}
 
 * Одновременно удаление пользователя с id=1 из сегмента AVITO_DISCOUNT_30 и его последующее добавление в сегмент AVITO_DISCOUNT_50. 
 
 ```bash
 curl -X POST http://localhost:8082/user -H "Content-Type: application/json" -d '{ "user_id":1, "segments_to_delete": ["AVITO_DISCOUNT_30"], "segments_to_add":[ {"slug": "AVITO_DISCOUNT_50"}] }'
 ```
+Результат успешной работы команды: {"status":"OK"}
 
 * Добавление пользователя с id=1 в сегмент AVITO_DISCOUNT_30 до 2023-08-31T13:10:00Z (формат RFC3339).
 
@@ -73,6 +78,7 @@ curl -X POST http://localhost:8082/user -H "Content-Type: application/json" -d '
 curl -X POST http://localhost:8082/user -H "Content-Type: application/json" -d '{ "user_id":1, "segments_to_add":[ {"slug": "AVITO_DISCOUNT_30", "expiration_date": "2023-08-31T13:10:00Z"}] }'
 
 ```
+Результат успешной работы команды: {"status":"OK"}
 
 * Посмотреть сегменты, в которых состоит пользователь с id=1.
 
@@ -80,6 +86,7 @@ curl -X POST http://localhost:8082/user -H "Content-Type: application/json" -d '
 curl -X GET http://localhost:8082/user/1
 
 ```
+Результат успешной работы команды: {"status":"OK","slugs":["AVITO_DISCOUNT_30"]}
 
 ## Дополнитель
 * Инициализация базы данных происходит в [файле](internal/storage/postgresql/postgresql.go) в методе New()
