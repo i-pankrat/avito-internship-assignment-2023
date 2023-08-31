@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -42,17 +43,16 @@ func main() {
 	})
 
 	srv := &http.Server{
-		Addr:         cfg.Address,
+		Addr:         "0.0.0.0:8080",
 		Handler:      router,
-		ReadTimeout:  cfg.Timeout,
-		WriteTimeout: cfg.Timeout,
-		IdleTimeout:  cfg.IdleTimeout,
+		ReadTimeout:  4 * time.Second,
+		WriteTimeout: 4 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal("Can not start server")
 	}
-
 }
 
 func createDBConnectionString(pc *config.Postgres) string {
