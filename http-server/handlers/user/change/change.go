@@ -38,18 +38,21 @@ func New(log *slog.Logger, usrSgmChanger UserSegmentChanger) http.HandlerFunc {
 
 		if err != nil {
 			log.Error("invalid json")
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, response.Error("can not decode request"))
 			return
 		}
 
 		if request.SegmentsToAdd == nil && request.SegmentsToDelete == nil {
 			log.Error("nothing to do")
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, response.Error("invalid request"))
 			return
 		}
 
 		if err := validator.New().Struct(request); err != nil {
 			log.Error("can not validate request data")
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, response.Error("can not validate request"))
 			return
 		}
@@ -60,16 +63,19 @@ func New(log *slog.Logger, usrSgmChanger UserSegmentChanger) http.HandlerFunc {
 
 			if errors.Is(err, storage.ErrSegmentDoesNotExist) || errors.Is(err, storage.ErrUserHasAlreadyAddedToSegment) {
 				log.Error("segment does not exist")
+				render.Status(r, http.StatusBadRequest)
 				render.JSON(w, r, response.Error(err.Error()))
 				return
 			}
 
 			log.Error("unexpected error", sl.Err(err))
+			render.Status(r, http.StatusInternalServerError)
 			render.JSON(w, r, response.Error("internal error"))
 			return
 		}
 
 		log.Info("change user segments", slog.Int("id", int(request.UserId)))
+		render.Status(r, http.StatusOK)
 		render.JSON(w, r, Response{response.OK()})
 	}
 }

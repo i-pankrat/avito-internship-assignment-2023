@@ -32,6 +32,7 @@ func New(log *slog.Logger, usrSgmGetter UserSegmentGetter) http.HandlerFunc {
 
 		if err != nil {
 			log.Error("invalid user id")
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, response.Error("invalid user id"))
 			return
 		}
@@ -40,11 +41,13 @@ func New(log *slog.Logger, usrSgmGetter UserSegmentGetter) http.HandlerFunc {
 
 		if err != nil {
 			log.Error("unexpected error", sl.Err(err))
+			render.Status(r, http.StatusInternalServerError)
 			render.JSON(w, r, response.Error("internal error"))
 			return
 		}
 
 		log.Info("return user segments", slog.Int("id", int(id)))
+		render.Status(r, http.StatusOK)
 		render.JSON(w, r, Response{response.OK(), sgms})
 	}
 }

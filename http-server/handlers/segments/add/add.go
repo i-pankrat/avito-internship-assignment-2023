@@ -36,12 +36,14 @@ func New(log *slog.Logger, sgmAdder SegmentAdder) http.HandlerFunc {
 
 		if err != nil {
 			log.Error("invalid json")
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, response.Error("can not decode request"))
 			return
 		}
 
 		if err = validator.New().Struct(request); err != nil {
 			log.Error("can not validate request data")
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, response.Error("can not validate request"))
 			return
 		}
@@ -51,17 +53,20 @@ func New(log *slog.Logger, sgmAdder SegmentAdder) http.HandlerFunc {
 		if err != nil {
 
 			if errors.Is(err, storage.ErrSegmentExists) {
+				render.Status(r, http.StatusBadRequest)
 				log.Error("segment has not added becaise it's already exist")
 				render.JSON(w, r, response.Error(err.Error()))
 				return
 			}
 
 			log.Error("unexpected error", sl.Err(err))
+			render.Status(r, http.StatusInternalServerError)
 			render.JSON(w, r, response.Error("internal error"))
 			return
 		}
 
 		log.Info("add segment", slog.String("slug", request.Slug))
+		render.Status(r, http.StatusOK)
 		render.JSON(w, r, response.OK())
 	}
 }
