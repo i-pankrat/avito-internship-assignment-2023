@@ -77,7 +77,7 @@ curl -X POST http://localhost:8082/user -H "Content-Type: application/json" -d '
 * Посмотреть сегменты, в которых состоит пользователь с id=1.
 
 ```bash
-curl -X GET http://localhost:8082/user/1'
+curl -X GET http://localhost:8082/user/1
 
 ```
 
