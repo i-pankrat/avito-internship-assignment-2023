@@ -69,3 +69,6 @@ curl -X POST http://localhost:8082/user -H "Content-Type: application/json" -d '
 curl -X POST http://localhost:8082/user -H "Content-Type: application/json" -d '{ "user_id":1, "segments_to_add":[ {"slug": "AVITO_DISCOUNT_30", "expiration_date": "2023-08-31T13:10:00Z"}] }'
 
 ```
+
+## Дополнитель
+* Инициализация базы данных происходит в [файле](internal/storage/postgresql/postgresql.go) в методе New()
