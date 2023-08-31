@@ -10,3 +10,4 @@ postgres:
   password: "postgres"
   db_name: "postgres"
   ssl_mode: "disable"
+ttl_checker_seconds: 20

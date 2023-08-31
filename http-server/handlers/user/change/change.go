@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
+	seg "github.com/i-pankrat/avito-internship-assignment-2023/internal/data/segment"
 	"github.com/i-pankrat/avito-internship-assignment-2023/internal/lib/api/logger/sl"
 	"github.com/i-pankrat/avito-internship-assignment-2023/internal/lib/api/response"
 	"github.com/i-pankrat/avito-internship-assignment-2023/internal/storage"
@@ -18,13 +19,13 @@ type Response struct {
 }
 
 type Request struct {
-	UserId           int64    `json:"user_id" validate:"required"`
-	SegmentsToAdd    []string `json:"segments_to_add,omitempty"`
-	SegmentsToDelete []string `json:"segments_to_delete,omitempty"`
+	UserId           int64         `json:"user_id" validate:"required"`
+	SegmentsToAdd    []seg.Segment `json:"segments_to_add,omitempty"`
+	SegmentsToDelete []seg.Slug    `json:"segments_to_delete,omitempty"`
 }
 
 type UserSegmentChanger interface {
-	ChangeUserSegments(id int64, segmentsToAdd, segmentsToDelete []string) error
+	ChangeUserSegments(id int64, segmentsToAdd []seg.Segment, segmentsToDelete []seg.Slug) error
 }
 
 func New(log *slog.Logger, usrSgmChanger UserSegmentChanger) http.HandlerFunc {

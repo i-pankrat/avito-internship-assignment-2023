@@ -56,12 +56,13 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	log.Info("starting server")
+	go storage.StartTTLChecker(log, cfg.TTLCheckerSeconds)
+
 	if err := srv.ListenAndServe(); err != nil {
 		log.Error("can not start server")
 		os.Exit(1)
 	}
-
-	log.Info("starting server")
 }
 
 func createDBConnectionString(pc *config.Postgres) string {

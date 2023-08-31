@@ -4,8 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
+
+	"log/slog"
 
 	seg "github.com/i-pankrat/avito-internship-assignment-2023/internal/data/segment"
+	"github.com/i-pankrat/avito-internship-assignment-2023/internal/lib/api/logger/sl"
 	"github.com/i-pankrat/avito-internship-assignment-2023/internal/storage"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -30,7 +34,8 @@ func New(connectiongString string) (*Storage, error) {
 
 	CREATE TABLE IF NOT EXISTS user_segments(
 		user_id bigint NOT NULL,
-		slug varchar(64) REFERENCES segments(slug) ON DELETE CASCADE NOT NULL);
+		slug varchar(64) REFERENCES segments(slug) ON DELETE CASCADE NOT NULL,
+		expiration_date timestamp);
     `)
 
 	if err != nil {
@@ -75,7 +80,7 @@ func (s *Storage) RemoveSegment(slug string) error {
 	return nil
 }
 
-func (s *Storage) ChangeUserSegments(id int64, segmentsToAdd, segmentsToDelete []string) error {
+func (s *Storage) ChangeUserSegments(id int64, segmentsToAdd []seg.Segment, segmentsToDelete []seg.Slug) error {
 	if len(segmentsToAdd) == 0 && len(segmentsToDelete) == 0 {
 		return nil
 	}
@@ -88,7 +93,7 @@ func (s *Storage) ChangeUserSegments(id int64, segmentsToAdd, segmentsToDelete [
 
 	// If an error occurred, checks whether the error occurred
 	// because the segment does not exist.
-	throwSlugError := func(err error, slug string) error {
+	throwSlugError := func(err error, slug seg.Slug) error {
 		if err != nil {
 			tx.Rollback()
 			var e *pgconn.PgError
@@ -123,33 +128,48 @@ func (s *Storage) ChangeUserSegments(id int64, segmentsToAdd, segmentsToDelete [
 
 	// Add segments
 	if len(segmentsToAdd) > 0 {
-		stmtAdd, err := tx.Prepare("INSERT INTO user_segments(user_id, slug) VALUES($1, $2);")
+		stmtAddWithoutDate, err := tx.Prepare("INSERT INTO user_segments(user_id, slug) VALUES($1, $2);")
+
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		defer stmtAddWithoutDate.Close()
+
+		stmtAddWithDate, err := tx.Prepare("INSERT INTO user_segments(user_id, slug, expiration_date) VALUES($1, $2, $3);")
 
 		if err != nil {
 			tx.Rollback()
 			return err
 		}
 
-		defer stmtAdd.Close()
+		defer stmtAddWithDate.Close()
 
-		for _, slug := range segmentsToAdd {
+		for _, segment := range segmentsToAdd {
 
 			var count int
 			err := tx.QueryRow("SELECT COUNT(*) FROM user_segments WHERE user_id=$1 AND slug=$2;",
-				id, slug).Scan(&count)
+				id, segment.Slug).Scan(&count)
 
 			if err != nil {
-				return throwSlugError(err, slug)
+				return throwSlugError(err, segment.Slug)
 			}
 
 			if count > 0 {
 				tx.Rollback()
-				return fmt.Errorf("%w: %d-%s", storage.ErrUserHasAlreadyAddedToSegment, id, slug)
+				return fmt.Errorf("%w: %d-%s", storage.ErrUserHasAlreadyAddedToSegment, id, segment.Slug)
 			}
 
-			_, err = stmtAdd.Exec(id, slug)
+			if segment.ExpirationDate.IsZero() {
+				_, err = stmtAddWithoutDate.Exec(id, segment.Slug)
+
+			} else {
+				_, err = stmtAddWithDate.Exec(id, segment.Slug, segment.ExpirationDate)
+
+			}
+
 			if err != nil {
-				return throwSlugError(err, slug)
+				return throwSlugError(err, segment.Slug)
 			}
 		}
 	}
@@ -180,4 +200,21 @@ func (s *Storage) GetUserSegments(user_id int64) ([]seg.Slug, error) {
 	}
 
 	return segments, nil
+}
+
+func (s *Storage) StartTTLChecker(log *slog.Logger, secondsTimer int) {
+	ticker := time.NewTicker(time.Duration(secondsTimer) * time.Second)
+
+	log.Info(fmt.Sprintf("start ttl checker with %d-second timer", secondsTimer))
+
+	for range ticker.C {
+		_, err := s.db.Exec("DELETE FROM user_segments WHERE " +
+			"expiration_date IS NOT NULL AND expiration_date <= NOW();")
+
+		if err != nil {
+			log.Error("failed to delete users whose time in the segment has expired", sl.Err(err))
+		} else {
+			log.Info("TTL Checker has deleted users whose time in the segment has expired")
+		}
+	}
 }

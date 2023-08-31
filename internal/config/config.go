@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	Env        string `yaml:"env" env-required:"true"`
-	Postgres   `yaml:"postgres"`
-	HTTPServer `yaml:"https_server"`
+	Env               string `yaml:"env" env-required:"true"`
+	Postgres          `yaml:"postgres"`
+	HTTPServer        `yaml:"https_server"`
+	TTLCheckerSeconds int `yaml:"ttl_checker_seconds"`
 }
 
 type Postgres struct {
